@@ -10,6 +10,7 @@
 
     var canvas; //Will be linked to the canvas in our default.html page
     var stage; //Is the equivalent of stage in AS3; we'll add "children" to it
+    var context; 
 
     // Game States 
     var gameStates = {
@@ -20,7 +21,7 @@
     };
 
     var currentGameState; // Keeps track of our current game state
-
+    
     // Graphics //
     var backgroundImage, backgroundBitmap; //The background graphic
     var playerImage, playerBitmap; //The player paddle graphic
@@ -43,6 +44,19 @@
     var SCALE_X = 4;
     var SCALE_Y = 4;
     var MARGIN = 25; //Inset from edge of screen
+    
+
+    // Variables
+    var BOXWIDTH = 30;
+    var BOARDER = 2;
+    var SQUARE_COLOUR = "#ff0000";
+    var SQUARE_SEL_COLOUR = "#0000ff";
+    var PEG_COLOUR = "#ffff0f";
+
+    var red = true;
+    var selectedX = -1;
+    var selectedY = -1;
+    var pegCount = 0;
 
     // Preloader 
     var preload;
@@ -71,11 +85,14 @@
 
     function initialize() {
         canvas = document.getElementById("gameCanvas"); // link our canvas to the one in default.html
+
+        context = gameCanvas.getContext("2d");
+
         canvas.width = window.innerWidth; // Set the canvas width
         canvas.height = window.innerHeight; // Set the canvas height
 
         stage = new createjs.Stage(canvas); // This creates our stage on the canvas
-
+        
         // Use PreloadJS to make sure sound & images are loaded
         // before we begin using them this is especially
         // important for large or remote resources
@@ -98,6 +115,8 @@
                             { src: "Assets/wall.mp3", id: "wall" }
         ]);
         preload.addEventListener("complete", prepareGame);
+        
+        //prepareGame();
 
         //Add our listener to check for state changes in the view, like snap view
         window.addEventListener("resize", onViewStateChanged);
@@ -110,7 +129,7 @@
 
         // Set the current state to 'Start'
         currentGameState = gameStates.Start;
-
+        /*
         // Setup the win/lose and paused graphics
         // We will add them to the stage when needed
         winImage = preload.getResult("win"); // This is how we get the image from preloader
@@ -188,8 +207,9 @@
 
 
         stage.addChild(playerScore, cpuScore, title); // Add the scores and title to the stage, you can add multiple children at once
-        stage.update(); // Update the stage
-
+        */
+        //stage.update(); // Update the stage
+        
         startGame(); // Run our startGame function
     }
     
@@ -215,12 +235,12 @@
             // The code below is ran while the game is in the 'Start' state
             case gameStates.Start: 
 
-                stage.onClick = null; //This nulls any click input
+                //stage.onClick = null; //This nulls any click input
 
                 // Check for a touch or click
-                stage.onClick = function () {
+                //stage.onClick = function () {
                     currentGameState = gameStates.Playing; // Switch states to playing
-                }
+                //}
                 break;
 
             // The code below is ran while the game is in the 'Playing' state
@@ -252,13 +272,13 @@
     // Our draw function
     function draw() {
         //EaselJS makes this easy for us, just update the stage
-        stage.update();
+        //stage.update();
     }
 
 
     // The gameplay logic, moved to its own function to make it easier to read
     function playGame() {
-
+        /*
         //Check for input
         stage.onMouseMove = movePaddle;
 
@@ -341,7 +361,45 @@
 
         if (cpuScore.text == winScore) {
             display('lose');
+        }*/
+
+        // Diamond Board
+        canvas.width = 9 * BOXWIDTH;
+
+        drawSquare(4, 0, SQUARE_COLOUR);
+        drawDot(4, 0, PEG_COLOUR);
+        for (var i = 0; i < 3; i++) {
+            drawSquare(3 + i, 1, SQUARE_COLOUR);
+            drawDot(3 + i, 1, PEG_COLOUR);
         }
+        for (var i = 0; i < 5; i++) {
+            drawSquare(2 + i, 2, SQUARE_COLOUR);
+            drawDot(2 + i, 2, PEG_COLOUR);
+        }
+        for (var i = 0; i < 7; i++) {
+            drawSquare(1 + i, 3, SQUARE_COLOUR);
+            drawDot(1 + i, 3, PEG_COLOUR);
+        }
+        for (var i = 0; i < 9; i++) {
+            drawSquare(0 + i, 4, SQUARE_COLOUR);
+            if (i != 4)
+                drawDot(0 + i, 4, PEG_COLOUR);
+        }
+        for (var i = 0; i < 7; i++) {
+            drawSquare(1 + i, 5, SQUARE_COLOUR);
+            drawDot(1 + i, 5, PEG_COLOUR);
+        }
+        for (var i = 0; i < 5; i++) {
+            drawSquare(2 + i, 6, SQUARE_COLOUR);
+            drawDot(2 + i, 6, PEG_COLOUR);
+        }
+        for (var i = 0; i < 3; i++) {
+            drawSquare(3 + i, 7, SQUARE_COLOUR);
+            drawDot(3 + i, 7, PEG_COLOUR);
+        }
+        drawSquare(4, 8, SQUARE_COLOUR);
+        drawDot(4, 8, PEG_COLOUR);
+        pegCount = 40;
     }
 
     function movePaddle(e) {
@@ -362,8 +420,155 @@
 
         ballBitmap.x = (canvas.width * 0.5) - ((ballImage.width * 0.5) * SCALE_X); 
         ballBitmap.y = (canvas.height * 0.5) - ((ballImage.height * 0.5) * SCALE_Y); 
+        }
+
+    // This will draw the squares
+    function drawSquare(x, y, colour) {
+        context.fillStyle = "rgb(0,0,0)";
+        context.fillRect(x * BOXWIDTH, y * BOXWIDTH, BOXWIDTH, BOXWIDTH);
+        context.fillStyle = colour;
+        context.fillRect(x * BOXWIDTH + BOARDER, y * BOXWIDTH + BOARDER, BOXWIDTH - 2 * BOARDER, BOXWIDTH - 2 * BOARDER);
     }
 
+    // This will draw the dots or pegs
+    function drawDot(x, y, colour) {
+        context.fillStyle = colour;
+        context.beginPath();
+        context.arc(x * BOXWIDTH + (BOXWIDTH / 2), y * BOXWIDTH + (BOXWIDTH / 2), BOXWIDTH * 0.4, 0, Math.PI * 2, true);
+        context.closePath();
+        context.fill();
+    }
+
+    // This will check if the square has a peg in it
+    function hasPeg(x, y, c) {
+        var p = c.getImageData(x * BOXWIDTH + BOXWIDTH / 2, y * BOXWIDTH + BOXWIDTH / 2, 1, 1).data;
+        var hexPeg = "#" + ("000000" + rgbToHex(p[0], p[1], p[2])).slice(-6);
+
+        if (hexPeg == PEG_COLOUR)
+            return true;
+        else
+            return false;
+    }
+
+    // This will check if a peg has been selected
+    function isSelected(x, y, c) {
+        var pB = c.getImageData(x * BOXWIDTH + BOARDER, y * BOXWIDTH + BOARDER, 1, 1).data;
+        var hexBorder = "#" + ("000000" + rgbToHex(pB[0], pB[1], pB[2])).slice(-6);
+
+        if (hexBorder == SQUARE_SEL_COLOUR)
+            return true;
+        else
+            return false;
+    }
+
+    
+    function GetInput(e) {
+
+        var pos = findPos(this);
+        var c = this.getContext('2d');
+
+        var x = e.pageX - pos.x;
+        var y = e.pageY - pos.y;
+        var coord = "x=" + x + ", y=" + y;
+
+        var xStart = Math.floor((e.pageX - canvas.offset().left) / BOXWIDTH);
+        var yStart = Math.floor((e.pageY - canvas.offset().top) / BOXWIDTH);
+        var coord_rnd = "x=" + xStart + ", y=" + yStart;
+
+        var p = c.getImageData(xStart * BOXWIDTH + BOXWIDTH / 2, yStart * BOXWIDTH + BOXWIDTH / 2, 1, 1).data;
+        var pB = c.getImageData(xStart * BOXWIDTH + BOARDER, yStart * BOXWIDTH + BOARDER, 1, 1).data;
+
+        var hexPeg = "#" + ("000000" + rgbToHex(p[0], p[1], p[2])).slice(-6);
+        var hexBorder = "#" + ("000000" + rgbToHex(pB[0], pB[1], pB[2])).slice(-6);
+
+        var peg;
+        if (hexPeg == PEG_COLOUR) {
+            peg = true;
+        } else {
+            peg = false;
+        }
+
+        /* square is selected, unselect it */
+        if (hexBorder == SQUARE_SEL_COLOUR) {
+            selectedX = -1;
+            selectedY = -1;
+            drawSquare(xStart, yStart, SQUARE_COLOUR);
+            if (peg)
+                drawDot(xStart, yStart, PEG_COLOUR);
+
+            /* square is unselected */
+        } else if (hexBorder == SQUARE_COLOUR) {
+
+            /* no others selected so select */
+            if (selectedX == -1 && selectedY == -1) {
+                /* check we have a peg to move */
+                var srcPeg = hasPeg(xStart, yStart, c);
+                if (!srcPeg)
+                    return;
+                selectedX = xStart;
+                selectedY = yStart;
+                drawSquare(xStart, yStart, SQUARE_SEL_COLOUR);
+                if (peg)
+                    drawDot(xStart, yStart, PEG_COLOUR);
+
+                /* other square selected - try move */
+            } else {
+                var xDiff = xStart - selectedX;
+                var yDiff = yStart - selectedY;
+
+                /* check we can go there */
+                if (xDiff > 2 || xDiff < -2 || yDiff > 2 || yDiff < -2)
+                    return;
+                if (xDiff != 0 && yDiff != 0)
+                    return;
+
+                /* do move! */
+                var destPeg = hasPeg(xStart, yStart, c);
+                if (!destPeg) {
+
+                    // jumped peg
+                    var xOff = 0;
+                    var yOff = 0;
+
+                    if (xStart - selectedX > 0)
+                        xOff = 1;
+                    else if (xStart - selectedX < 0)
+                        xOff = -1;
+                    else {
+                        xOff = 0;
+                        if (yStart - selectedY > 0)
+                            yOff = 1;
+                        else if (yStart - selectedY < 0)
+                            yOff = -1;
+                        else
+                            return;
+                    }
+
+                    /* check we have a peg to jump */
+                    var midPeg = hasPeg(selectedX + xOff, selectedY + yOff, c);
+                    if (!midPeg)
+                        return;
+
+                    // jumped peg
+                    drawSquare(selectedX + xOff, selectedY + yOff, SQUARE_COLOUR);
+                    // peg dest
+                    drawDot(xStart, yStart, PEG_COLOUR);
+                    // peg src
+                    drawSquare(selectedX, selectedY, SQUARE_COLOUR);
+
+                    pegCount--;
+                    selectedX = -1;
+                    selectedY = -1;
+                }
+            }
+        }
+
+        /* Check if they have won */
+        if (pegCount == 1) {
+            // $('#win').html("YOU WIN!");
+            //init();
+        }
+    }
 
     // This function will display our overlays and clear them when needed
     function display(e) {
